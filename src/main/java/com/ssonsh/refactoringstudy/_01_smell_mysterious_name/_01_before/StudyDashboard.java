@@ -12,9 +12,7 @@ import java.util.Set;
 
 public class StudyDashboard {
 
-    private Set<String> usernames = new HashSet<>();
-
-    private Set<String> reviews = new HashSet<>();
+    private Set<StudyReview> studyReviews = new HashSet<>();
 
     /**
      * 스터디 리뷰 이슈에 작성되어 있는 리뷰어 목록과 리뷰를 읽어온다.
@@ -26,24 +24,33 @@ public class StudyDashboard {
         GHIssue issue = repository.getIssue(30);
 
         List<GHIssueComment> reviews = issue.getComments();
-        for (GHIssueComment reivew : reviews) {
-            usernames.add(reivew.getUserName());
-            this.reviews.add(reivew.getBody());
+        for (GHIssueComment review : reviews) {
+
+            // AS-IS
+            /*
+            reviewers.add(review.getUserName());
+            this.reviews.add(review.getBody());
+             */
+
+            // TO-BE. use Record
+            studyReviews.add(new StudyReview(review.getUserName(), review.getBody()));
         }
     }
 
-    public Set<String> getUsernames() {
-        return usernames;
-    }
-
-    public Set<String> getReviews() {
-        return reviews;
+    public Set<StudyReview> getStudyReviews(){
+        return studyReviews;
     }
 
     public static void main(String[] args) throws IOException {
         StudyDashboard studyDashboard = new StudyDashboard();
         studyDashboard.loadReviews();
-        studyDashboard.getUsernames().forEach(name -> System.out.println(name));
+        // AS-IS
+        /*
+        studyDashboard.getReviewers().forEach(name -> System.out.println(name));
         studyDashboard.getReviews().forEach(review -> System.out.println(review));
+         */
+
+        // TO-BE
+        studyDashboard.getStudyReviews().forEach(System.out::println);
     }
 }
