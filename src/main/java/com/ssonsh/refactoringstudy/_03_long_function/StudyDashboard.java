@@ -9,6 +9,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -19,21 +20,36 @@ import java.util.concurrent.Executors;
 public class StudyDashboard {
 
     private int totalNumberOfEvents;
+    private List<Participant> participants;
+    private Participant[] firstParticipantsForEachEvent;
+
+    public StudyDashboard(int totalNumberOfEvents) {
+        this.totalNumberOfEvents = totalNumberOfEvents;
+        this.participants = new CopyOnWriteArrayList<>();
+        this.firstParticipantsForEachEvent = new Participant[this.totalNumberOfEvents];
+    }
 
     public static void main(String[] args) throws IOException, InterruptedException {
         StudyDashboard studyDashboard = new StudyDashboard(15);
         studyDashboard.print();
     }
 
-    public StudyDashboard(int totalNumberOfEvents) {
-        this.totalNumberOfEvents = totalNumberOfEvents;
+    private void print() throws IOException, InterruptedException {
+        GHRepository repository = findGithubRepository();
+
+        checkGithubIssues(repository);
+
+        new StudyPrinter(this.totalNumberOfEvents, this.participants).exeute();
     }
 
-    private void print() throws IOException, InterruptedException {
+    private GHRepository findGithubRepository() throws IOException {
         GitHub gitHub = GitHub.connect();
         GHRepository repository = gitHub.getRepository("whiteship/live-study");
-        List<Participant> participants = new CopyOnWriteArrayList<>();
+        return repository;
+    }
 
+    private void checkGithubIssues(GHRepository repository) throws
+        InterruptedException {
         ExecutorService service = Executors.newFixedThreadPool(8);
         CountDownLatch latch = new CountDownLatch(totalNumberOfEvents);
 
@@ -45,12 +61,8 @@ public class StudyDashboard {
                     try {
                         GHIssue issue = repository.getIssue(eventId);
                         List<GHIssueComment> comments = issue.getComments();
-
-                        for (GHIssueComment comment : comments) {
-                            Participant participant = findParticipant(comment.getUserName(), participants);
-                            participant.setHomeworkDone(eventId);
-                        }
-
+                        checkHomwork(comments, participants, eventId);
+                        firstParticipantsForEachEvent[eventId - 1] = findFirst(comments, participants);
                         latch.countDown();
                     }
                     catch (IOException e) {
@@ -62,8 +74,26 @@ public class StudyDashboard {
 
         latch.await();
         service.shutdown();
+    }
 
-        new StudyPrinter(this.totalNumberOfEvents, participants).exeute();
+    private Participant findFirst(List<GHIssueComment> comments, List<Participant> participants) throws IOException {
+        Date firstCreatedAt = null;
+        Participant first = null;
+        for (GHIssueComment comment : comments) {
+            Participant participant = findParticipant(comment.getUserName(), participants);
+            if(firstCreatedAt == null || comment.getCreatedAt().before(firstCreatedAt)){
+                firstCreatedAt = comment.getCreatedAt();
+                first = participant;
+            }
+        }
+        return first;
+    }
+
+    private void checkHomwork(List<GHIssueComment> comments, List<Participant> participants, int eventId) {
+        for (GHIssueComment comment : comments) {
+            Participant participant = findParticipant(comment.getUserName(), participants);
+            participant.setHomeworkDone(eventId);
+        }
     }
 
     private Participant findParticipant(String username, List<Participant> participants) {
