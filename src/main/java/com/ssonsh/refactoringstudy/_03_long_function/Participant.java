@@ -10,8 +10,8 @@ public record Participant(String username, Map<Integer, Boolean> homework) {
 
     public double getRate(double total) {
         long count = this.homework.values().stream()
-                .filter(v -> v == true)
-                .count();
+                                  .filter(v -> v == true)
+                                  .count();
         return count * 100 / total;
     }
 
@@ -19,4 +19,11 @@ public record Participant(String username, Map<Integer, Boolean> homework) {
         this.homework.put(index, true);
     }
 
+    public double getRate(int totalNumberOfEvents) {
+        long count = homework.values().stream()
+                             .filter(v -> v == true)
+                             .count();
+        double rate = count * 100 / totalNumberOfEvents;
+        return rate;
+    }
 }
