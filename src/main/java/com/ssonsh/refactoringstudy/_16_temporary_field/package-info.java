@@ -1,0 +1,1 @@
+package com.ssonsh.refactoringstudy._16_temporary_field;
