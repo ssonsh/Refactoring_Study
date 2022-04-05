@@ -1,0 +1,1 @@
+package com.ssonsh.refactoringstudy._15_speculative_generality;
