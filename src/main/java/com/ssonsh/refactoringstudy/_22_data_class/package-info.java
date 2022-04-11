@@ -1,0 +1,1 @@
+package com.ssonsh.refactoringstudy._22_data_class;
